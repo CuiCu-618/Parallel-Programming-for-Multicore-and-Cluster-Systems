@@ -8,6 +8,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <cstdlib>
 
 #define BLOCK_SIZE 2
 typedef unsigned int uint;
@@ -22,7 +23,7 @@ void print(T x[], size_t N)
 
 std::ostream & operator<<(std::ostream &os, float a[])
 {
-  for (auto p = a; *p >= 0 && *p <= 10; ++p)
+  for (float* p = a; *p >= 0 && *p <= 10; ++p)
     os << *p << " ";
   os << std::endl;
   return os;

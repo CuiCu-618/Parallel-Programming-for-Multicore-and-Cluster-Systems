@@ -10,7 +10,7 @@ int main(int argv, char** argc)
   int rank, size;
   int *local, *global, *rbuf;
   int m;
-  m = std::atoi(argc[1]);
+  m = atoi(argc[1]);
   MPI_Init(&argv, &argc);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
