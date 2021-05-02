@@ -14,20 +14,30 @@
 typedef unsigned int uint;
 
 template <class T>
-void print(T x[], size_t N)
+void print(T x[], int N)
 {
   for (uint i=0; i < N; ++i)
     std::cout << std::setprecision(3) << std::setw(6) << x[i] << " ";
   std::cout << std::endl;
 }
 
-std::ostream & operator<<(std::ostream &os, float a[])
+template <class T>
+void print_matrix(T A[], int N)
 {
-  for (float* p = a; *p >= 0 && *p <= 10; ++p)
-    os << *p << " ";
-  os << std::endl;
-  return os;
+  for (uint i=0; i<N; ++i){
+    for (uint j=0; j<N; ++j){
+      printf("%2.2f ", A[i*N+j]);
+    }
+    printf("\n");
+  }
 }
 
+template <class T>
+void print_vectoe(T b[], int N)
+{
+  for (uint i=0; i<N; ++i)
+      printf("%2.2f ", b[i]);
+    printf("\n");
+}
 
 #endif // MPI_TOOLS_H
