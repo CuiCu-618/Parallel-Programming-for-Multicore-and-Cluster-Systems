@@ -96,6 +96,7 @@ void matvec_seq(const double A[], const double b[], double x[], int N)
 void matvec_para(const double A[], const double b[], double x[], int N, int rank, int size)
 {
   int row;
+  /*
   double* temp;
   temp = new double[N];
   memset(temp, 0, N * sizeof(temp[0]));
@@ -115,5 +116,15 @@ void matvec_para(const double A[], const double b[], double x[], int N, int rank
   {
     MPI_Reduce(&temp[i], &x[i], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   }
-  delete[] temp;
+   delete[] temp;
+
+  */
+  for (int i=0; i<N; ++i){
+    if (i % size == rank){
+      for (int j = 0; j < N; ++j)
+        x[i] += A[i * N + j] * b[j];
+//      MPI_Bcast(&x[i],1,MPI_DOUBLE,rank,MPI_COMM_WORLD);
+    }
+  }
+
 }
