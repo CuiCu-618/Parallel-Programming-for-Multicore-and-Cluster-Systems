@@ -6,17 +6,78 @@
 #define MPI_TOOLS_H
 
 #include <cmath>
-#include <iostream>
-#include <iomanip>
 #include <cstdlib>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
 
 #define BLOCK_SIZE 2
+#define MAX_CYCLE 2000
+
 typedef unsigned int uint;
+
+double norm_l2(const double x[], int N)
+{
+  double norm = 0.0;
+  for (int i = 0; i < N; ++i)
+    norm += x[i] * x[i];
+  return sqrt(norm);
+}
+
+void init_system(double A[], double b[], double x[], int N)
+{
+  if (A != NULL)
+  {
+    int n = sqrt(N);
+    memset(A, 0, N * N * sizeof(A[0]));
+    for (int j = 0; j < N; ++j)
+    {
+      A[j * N + j] = 4.0;
+      if (j > 0)
+        A[j * N + j - 1] = -1.0;
+      if (j < N - 1)
+        A[j * N + j + 1] = -1.0;
+      if (j > n)
+        A[j * N + j - n] = -1.0;
+      if (j < N - n - 1)
+        A[j * N + j + n] = -1.0;
+    }
+  }
+  if (x != NULL)
+  {
+    memset(x, 0, N * sizeof(x[0]));
+    for (int i = 0; i < N; ++i)
+      x[i] = rand() / (double)RAND_MAX + 1;
+  }
+  if ((b != NULL) && (A != NULL) && (x != NULL))
+  {
+    memset(b, 0, N * sizeof(b[0]));
+    for (int i = 0; i < N; ++i)
+    {
+      for (int j = 0; j < N; ++j)
+      {
+        b[i] += A[i * N + j] * x[j];
+      }
+    }
+  }
+}
+
+void matvec_multi(const double A[], const double b[], double x[], const int N)
+{
+
+  for (int i = 0; i < N; ++i)
+  {
+    for (int j = 0; j < N; ++j)
+    {
+      x[i] += A[i * N + j] * b[j];
+    }
+  }
+}
 
 template <class T>
 void print(T x[], int N)
 {
-  for (uint i=0; i < N; ++i)
+  for (uint i = 0; i < N; ++i)
     std::cout << std::setprecision(3) << std::setw(6) << x[i] << " ";
   std::cout << std::endl;
 }
@@ -24,9 +85,11 @@ void print(T x[], int N)
 template <class T>
 void print_matrix(T A[], int N)
 {
-  for (uint i=0; i<N; ++i){
-    for (uint j=0; j<N; ++j){
-      printf("%2.2f ", A[i*N+j]);
+  for (uint i = 0; i < N; ++i)
+  {
+    for (uint j = 0; j < N; ++j)
+    {
+      printf("%4.1f ", A[i * N + j]);
     }
     printf("\n");
   }
@@ -35,9 +98,9 @@ void print_matrix(T A[], int N)
 template <class T>
 void print_vectoe(T b[], int N)
 {
-  for (uint i=0; i<N; ++i)
-      printf("%2.2f ", b[i]);
-    printf("\n");
+  for (uint i = 0; i < N; ++i)
+    printf("%2.2f ", b[i]);
+  printf("\n");
 }
 
 void isPassed(double x[], double x_0[], int N)
@@ -88,14 +151,16 @@ void exchange_row(double A[], double b[], int r, int k, int N)
   b[k] = temp;
 }
 
-int max_col_pointer(double **row_index, int k, int N)
+int max_col_pointer(double** row_index, int k, int N)
 {
-  double max = abs(*(row_index[k]+k));
+  double max = abs(*(row_index[k] + k));
   double temp;
   int r = k;
-  for (int i=k+1; i<N; ++i){
-    temp = abs(*(row_index[i]+k));
-    if (temp > max){
+  for (int i = k + 1; i < N; ++i)
+  {
+    temp = abs(*(row_index[i] + k));
+    if (temp > max)
+    {
       max = temp;
       r = i;
     }
@@ -103,7 +168,7 @@ int max_col_pointer(double **row_index, int k, int N)
   return r;
 }
 
-void exchange_row_pointer(double b[], int r, int k, double **row_index)
+void exchange_row_pointer(double b[], int r, int k, double** row_index)
 {
   double *temp, tmp;
   temp = row_index[r];

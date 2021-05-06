@@ -43,23 +43,24 @@ int main(int argc, char** argv)
   MPI_Init(NULL, NULL);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  double seq_time=0, para_time=0;
-  for (int cycle = 0; cycle<CYCLE; ++cycle)
+  double seq_time = 0, para_time = 0;
+  for (int cycle = 0; cycle < CYCLE; ++cycle)
   {
     seq_time -= MPI_Wtime();
     matvec_seq(A, b, x, N);
     seq_time += MPI_Wtime();
-
+  }
+  for (int cycle = 0; cycle < CYCLE; ++cycle)
+  {
     para_time -= MPI_Wtime();
     matvec_para(A, b, x_0, N, rank, size);
     para_time += MPI_Wtime();
   }
 
-
   if (rank == 0)
   {
     std::cout << "Compute A x b [" << CYCLE << "] times with size N = " << N << std::endl;
-    printf("Seq  time: %.4f\nPare time: %.4f\n",seq_time,para_time);
+    printf("Seq  time: %.4f\nPare time: %.4f\n", seq_time, para_time);
     isPassed(x, x_0, N);
   }
   //  printf("Matrix A : \n");
@@ -67,8 +68,8 @@ int main(int argc, char** argv)
   //  printf("RHS b : \n");
   //  print_vectoe<double>(b, N);
   //  printf("RHS x : \n");
-//    print_vectoe<double>(x_0, N);
-//    print_vectoe<double>(x, N);
+//  print_vectoe<double>(x_0, N);
+//  print_vectoe<double>(x, N);
 
   delete[] A;
   delete[] b;
@@ -82,7 +83,6 @@ int main(int argc, char** argv)
 
 void matvec_seq(const double A[], const double b[], double x[], int N)
 {
-  memset(x, 0, N * sizeof(x[0]));
 
   for (int i = 0; i < N; ++i)
   {
@@ -95,8 +95,8 @@ void matvec_seq(const double A[], const double b[], double x[], int N)
 
 void matvec_para(const double A[], const double b[], double x[], int N, int rank, int size)
 {
-  int row;
   /*
+  int row;
   double* temp;
   temp = new double[N];
   memset(temp, 0, N * sizeof(temp[0]));
@@ -119,12 +119,13 @@ void matvec_para(const double A[], const double b[], double x[], int N, int rank
    delete[] temp;
 
   */
-  for (int i=0; i<N; ++i){
-    if (i % size == rank){
+  for (int i = 0; i < N; ++i)
+  {
+    if (i % size == rank)
+    {
       for (int j = 0; j < N; ++j)
         x[i] += A[i * N + j] * b[j];
-//      MPI_Bcast(&x[i],1,MPI_DOUBLE,rank,MPI_COMM_WORLD);
     }
+    MPI_Bcast(&x[i], 1, MPI_DOUBLE, i%size, MPI_COMM_WORLD);
   }
-
 }
