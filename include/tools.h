@@ -96,10 +96,10 @@ void print_matrix(T A[], int N)
 }
 
 template <class T>
-void print_vectoe(T b[], int N)
+void print_vector(T b[], int N)
 {
   for (uint i = 0; i < N; ++i)
-    printf("%2.2f ", b[i]);
+    printf("%4.1f ", b[i]);
   printf("\n");
 }
 

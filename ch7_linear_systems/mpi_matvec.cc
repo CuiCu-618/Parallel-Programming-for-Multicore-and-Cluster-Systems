@@ -8,6 +8,7 @@
 
 void matvec_seq(const double A[], const double b[], double x[], int N);
 void matvec_para(const double A[], const double b[], double x[], int N, int rank, int size);
+void matvec_para_block(const double A[], const double b[], double x[], int N, int rank, int size);
 
 int main(int argc, char** argv)
 {
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
   MPI_Init(NULL, NULL);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  double seq_time = 0, para_time = 0;
+  double seq_time = 0, para_time = 0, para_time_block = 0;
   for (int cycle = 0; cycle < CYCLE; ++cycle)
   {
     seq_time -= MPI_Wtime();
@@ -56,11 +57,20 @@ int main(int argc, char** argv)
     matvec_para(A, b, x_0, N, rank, size);
     para_time += MPI_Wtime();
   }
+  memset(x_0, 0, N * sizeof(x_0[0]));
+  for (int cycle = 0; cycle < CYCLE; ++cycle)
+  {
+    para_time_block -= MPI_Wtime();
+    matvec_para_block(A, b, x_0, N, rank, size);
+    para_time_block += MPI_Wtime();
+  }
 
   if (rank == 0)
   {
     std::cout << "Compute A x b [" << CYCLE << "] times with size N = " << N << std::endl;
-    printf("Seq  time: %.4f\nPare time: %.4f\n", seq_time, para_time);
+    printf("Seq  time      : %.4f\n"
+           "Pare time      : %.4f\n"
+           "Pare block time: %.4f\n", seq_time, para_time,para_time_block);
     isPassed(x, x_0, N);
   }
   //  printf("Matrix A : \n");
@@ -68,8 +78,8 @@ int main(int argc, char** argv)
   //  printf("RHS b : \n");
   //  print_vectoe<double>(b, N);
   //  printf("RHS x : \n");
-//  print_vectoe<double>(x_0, N);
-//  print_vectoe<double>(x, N);
+//  print_vector<double>(x_0, N);
+//  print_vector<double>(x, N);
 
   delete[] A;
   delete[] b;
@@ -95,30 +105,7 @@ void matvec_seq(const double A[], const double b[], double x[], int N)
 
 void matvec_para(const double A[], const double b[], double x[], int N, int rank, int size)
 {
-  /*
-  int row;
-  double* temp;
-  temp = new double[N];
-  memset(temp, 0, N * sizeof(temp[0]));
-
-  for (int i = 0; i < N / size; ++i)
-  {
-    row = rank + i * size;
-    for (int j = 0; j < N; ++j)
-    {
-      temp[row] += A[row * N + j] * b[j];
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    //    printf("P[%d] has row %d\n", rank, row);
-  }
-  for (int i = 0; i < N; i++)
-  {
-    MPI_Reduce(&temp[i], &x[i], 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  }
-   delete[] temp;
-
-  */
+  // cycle
   for (int i = 0; i < N; ++i)
   {
     if (i % size == rank)
@@ -126,6 +113,26 @@ void matvec_para(const double A[], const double b[], double x[], int N, int rank
       for (int j = 0; j < N; ++j)
         x[i] += A[i * N + j] * b[j];
     }
+//    printf("[%d]: %d, %d\n",i, rank, i % size);
     MPI_Bcast(&x[i], 1, MPI_DOUBLE, i%size, MPI_COMM_WORLD);
+  }
+}
+
+void matvec_para_block(const double A[], const double b[], double x[], int N, int rank, int size)
+{
+  int start, end;
+  start = rank * N / size;
+  end = start + N / size - 1;
+  //  std::cout << rank << ": " << start << "," << end << "\n";
+  //  printf("[%d]: %d, %d\n",start, rank, start % size);
+  for (int i = start; i <= end; ++i)
+  {
+    for (int j = 0; j < N; ++j)
+      x[i] += A[i * N + j] * b[j];
+  }
+  for (int i = 0; i < size; i++)
+  {
+//    printf("[%d]: %d, %d\n",i, rank, i);
+    MPI_Bcast(&x[i*N/size], N / size, MPI_DOUBLE, i, MPI_COMM_WORLD);
   }
 }
