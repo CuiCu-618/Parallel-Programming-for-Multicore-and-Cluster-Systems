@@ -37,9 +37,9 @@ void init_system(double A[], double b[], double x[], int N)
         A[j * N + j - 1] = -1.0;
       if (j < N - 1)
         A[j * N + j + 1] = -1.0;
-      if (j > n)
+      if (j > n - 1)
         A[j * N + j - n] = -1.0;
-      if (j < N - n - 1)
+      if (j < N - n)
         A[j * N + j + n] = -1.0;
     }
   }

@@ -8,12 +8,13 @@
 
 void matvec_seq(const double A[], const double b[], double x[], int N);
 void matvec_para(const double A[], const double b[], double x[], int N, int rank, int size);
-void matvec_para_block(const double A[], const double b[], double x[], int N, int rank, int size);
+void matvec_para_block(const double A[], const double b[], double x[], int N, int rank, int size,
+                       double x_temp[]);
 
 int main(int argc, char** argv)
 {
   int N, index, CYCLE, rank, size;
-  double *A, *b, *x, *x_0;
+  double *A, *b, *x, *x_0, *x_temp;
   if (argc != 3)
     printf("Need args: size N, cycle CYCLE!\n");
 
@@ -24,11 +25,13 @@ int main(int argc, char** argv)
   b = new double[N];
   x = new double[N];
   x_0 = new double[N];
+  x_temp = new double[N];
 
   memset(A, 0, N * N * sizeof(A[0]));
   memset(b, 0, N * sizeof(b[0]));
   memset(x, 0, N * sizeof(x[0]));
   memset(x_0, 0, N * sizeof(x_0[0]));
+  memset(x_temp, 0, N * sizeof(x_temp[0]));
 
   // init A x_0
   for (int i = 0; i < N; ++i)
@@ -61,7 +64,7 @@ int main(int argc, char** argv)
   for (int cycle = 0; cycle < CYCLE; ++cycle)
   {
     para_time_block -= MPI_Wtime();
-    matvec_para_block(A, b, x_0, N, rank, size);
+    matvec_para_block(A, b, x_0, N, rank, size,x_temp);
     para_time_block += MPI_Wtime();
   }
 
@@ -71,14 +74,15 @@ int main(int argc, char** argv)
     printf("Seq  time      : %.4f\n"
            "Pare time      : %.4f\n"
            "Pare block time: %.4f\n", seq_time, para_time,para_time_block);
-    isPassed(x, x_0, N);
+//    isPassed(x, x_0, N);
+    isPassed(x,x_temp,N);
   }
   //  printf("Matrix A : \n");
   //  print_matrix<double>(A, N);
   //  printf("RHS b : \n");
   //  print_vectoe<double>(b, N);
   //  printf("RHS x : \n");
-//  print_vector<double>(x_0, N);
+//  print_vector<double>(x_temp, N);
 //  print_vector<double>(x, N);
 
   delete[] A;
@@ -118,7 +122,8 @@ void matvec_para(const double A[], const double b[], double x[], int N, int rank
   }
 }
 
-void matvec_para_block(const double A[], const double b[], double x[], int N, int rank, int size)
+void matvec_para_block(const double A[], const double b[], double x[], int N, int rank, int size,
+                       double x_temp[])
 {
   int start, end;
   start = rank * N / size;
@@ -130,9 +135,10 @@ void matvec_para_block(const double A[], const double b[], double x[], int N, in
     for (int j = 0; j < N; ++j)
       x[i] += A[i * N + j] * b[j];
   }
-  for (int i = 0; i < size; i++)
-  {
+//  for (int i = 0; i < size; i++)
+//  {
 //    printf("[%d]: %d, %d\n",i, rank, i);
-    MPI_Bcast(&x[i*N/size], N / size, MPI_DOUBLE, i, MPI_COMM_WORLD);
-  }
+//    MPI_Bcast(&x[i*N/size], N / size, MPI_DOUBLE, i, MPI_COMM_WORLD);
+//  }
+  MPI_Allgather(&x[start],N/size,MPI_DOUBLE,x_temp,N/size,MPI_DOUBLE,MPI_COMM_WORLD);
 }
